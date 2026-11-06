@@ -3,10 +3,13 @@
  * /start: snelle route naar verkoop.
  * Elke CTA heeft data-cta (uniek) + data-cta-type (whatsapp | booking |
  * contact | anchor | nav | social) zodat je later per klik kunt meten.
- * Geen client-side JavaScript: FAQ = <details>, sticky balk = CSS.
+ * Client-JS alleen voor meten: Vercel Web Analytics + Speed Insights
+ * en een klein click-script voor de CTA's. FAQ = <details>, sticky balk = CSS.
  */
 import '../styles/brand.css';
 import Icon from './Icon.astro';
+import Analytics from '@vercel/analytics/astro';
+import SpeedInsights from '@vercel/speed-insights/astro';
 import { t, type Lang } from '../i18n/start';
 import {
   links, plans, productionDay, singleHourPrice, business,
@@ -359,6 +362,21 @@ const jsonLd = [
         <Icon name="whatsapp" size={20} /><span>{c.sticky.wa}</span>
       </a>
     </div>
+
+    <Analytics />
+    <SpeedInsights />
+    <script is:inline>
+      // Elke klik op een CTA als custom event naar Vercel Web Analytics.
+      // Let op: custom events zijn alleen zichtbaar op het Pro-plan.
+      document.addEventListener('click', function (e) {
+        var el = e.target.closest && e.target.closest('[data-cta]');
+        if (!el || !window.va) return;
+        window.va('event', {
+          name: 'cta_click',
+          data: { cta: el.dataset.cta, type: el.dataset.ctaType || '', lang: document.documentElement.lang },
+        });
+      });
+    </script>
   </body>
 </html>
 
