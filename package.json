@@ -12,5 +12,8 @@
   },
   "dependencies": {
     "astro": "^4.16.18"
+  },
+  "engines": {
+    "node": "22.x"
   }
 }

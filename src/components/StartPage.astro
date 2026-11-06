@@ -45,7 +45,7 @@ const offers = [
     name: lang === 'nl' ? 'Losse boeking repetitieruimte' : 'Single rehearsal space booking',
     price: singleHourPrice.toFixed(2),
     priceCurrency: 'EUR',
-    url: new URL(links.booking, site).href,
+    url: links.booking,
     priceSpecification: {
       '@type': 'UnitPriceSpecification',
       price: singleHourPrice.toFixed(2),
@@ -108,8 +108,6 @@ const jsonLd = [
   },
 ];
 
-/** Gemeenschappelijke attributen voor externe WhatsApp-links. */
-const ext = { target: '_blank', rel: 'noopener' };
 ---
 <!doctype html>
 <html lang={lang}>
@@ -142,12 +140,12 @@ const ext = { target: '_blank', rel: 'noopener' };
     <!-- 1. Header -->
     <header class="hdr">
       <div class="container hdr__in">
-        <a href="/" class="hdr__logo" aria-label={c.header.home} data-cta="logo-header" data-cta-type="nav">
+        <a href={links.home} class="hdr__logo" aria-label={c.header.home} data-cta="logo-header" data-cta-type="nav">
           <img src="/brand/logo-header.webp" alt="Anytime Music" width="137" height="60" fetchpriority="high" decoding="async" />
         </a>
         <nav class="hdr__actions" aria-label={lang === 'nl' ? 'Snelle acties' : 'Quick actions'}>
           <a class="lang lang--hdr" href={c.altPath} hreflang={t[lang === 'nl' ? 'en' : 'nl'].lang} data-cta="lang-switch-header" data-cta-type="nav">{c.altLabel}</a>
-          <a class="btn btn--wa btn--sm" href={waLink(c.headerWaMsg)} {...ext} data-cta="whatsapp-header" data-cta-type="whatsapp">
+          <a class="btn btn--wa btn--sm" href={waLink(c.headerWaMsg)} target="_blank" rel="noopener" data-cta="whatsapp-header" data-cta-type="whatsapp">
             <Icon name="whatsapp" size={18} /><span>{c.header.whatsapp}</span>
           </a>
           <a class="btn btn--primary btn--sm" href={links.booking} data-cta="book-header" data-cta-type="booking">{c.header.book}</a>
@@ -179,7 +177,7 @@ const ext = { target: '_blank', rel: 'noopener' };
             </a>
           </div>
 
-          <a class="btn btn--wa btn--block-m hero__wa" href={waLink(c.heroWaMsg)} {...ext} data-cta="whatsapp-hero" data-cta-type="whatsapp">
+          <a class="btn btn--wa btn--block-m hero__wa" href={waLink(c.heroWaMsg)} target="_blank" rel="noopener" data-cta="whatsapp-hero" data-cta-type="whatsapp">
             <Icon name="whatsapp" size={20} /><span>{c.hero.whatsapp}</span>
           </a>
 
@@ -229,7 +227,7 @@ const ext = { target: '_blank', rel: 'noopener' };
                   <a
                     class:list={['btn', 'btn--block', p.popular ? 'btn--primary' : 'btn--ghost']}
                     href={waLink(c.room.waMsg(p))}
-                    {...ext}
+                    target="_blank" rel="noopener"
                     data-cta={`plan-${p.id}`} data-cta-type="whatsapp"
                   ><Icon name="whatsapp" size={18} /><span>{c.room.cta}</span></a>
                 </li>
@@ -262,7 +260,7 @@ const ext = { target: '_blank', rel: 'noopener' };
                 ))}
               </ul>
               <div class="prod__ctas">
-                <a class="btn btn--primary btn--block-m" href={waLink(c.content.waMsg)} {...ext} data-cta="productiedag-whatsapp" data-cta-type="whatsapp">
+                <a class="btn btn--primary btn--block-m" href={waLink(c.content.waMsg)} target="_blank" rel="noopener" data-cta="productiedag-whatsapp" data-cta-type="whatsapp">
                   <Icon name="whatsapp" size={20} /><span>{c.content.cta}</span>
                 </a>
                 <a class="link" href={links.contact} data-cta="productiedag-contact" data-cta-type="contact">{c.content.secondary} <Icon name="arrow" size={16} /></a>
@@ -333,7 +331,7 @@ const ext = { target: '_blank', rel: 'noopener' };
             <h2 class="h2">{c.final.title}</h2>
             <p class="lead">{c.final.text}</p>
             <div class="final__ctas">
-              <a class="btn btn--wa" href={waLink(c.final.waMsg)} {...ext} data-cta="whatsapp-final" data-cta-type="whatsapp">
+              <a class="btn btn--wa" href={waLink(c.final.waMsg)} target="_blank" rel="noopener" data-cta="whatsapp-final" data-cta-type="whatsapp">
                 <Icon name="whatsapp" size={20} /><span>{c.final.wa}</span>
               </a>
               <a class="btn btn--ghost" href={links.contact} data-cta="contact-final" data-cta-type="contact">{c.final.tour}</a>
@@ -347,7 +345,7 @@ const ext = { target: '_blank', rel: 'noopener' };
       <div class="container ftr__in">
         <span>{business.legalName} · {c.footer.address}</span>
         <span class="ftr__links">
-          <a href={waLink(c.stickyWaMsg)} {...ext} data-cta="whatsapp-footer" data-cta-type="whatsapp">{whatsapp.display}</a>
+          <a href={waLink(c.stickyWaMsg)} target="_blank" rel="noopener" data-cta="whatsapp-footer" data-cta-type="whatsapp">{whatsapp.display}</a>
           <a href={links.instagram} target="_blank" rel="noopener" data-cta="instagram-footer" data-cta-type="social">{c.footer.instagram}</a>
           <a href={c.altPath} hreflang={lang === 'nl' ? 'en' : 'nl'} data-cta="lang-switch-footer" data-cta-type="nav">{c.altLabel}</a>
         </span>
@@ -357,7 +355,7 @@ const ext = { target: '_blank', rel: 'noopener' };
     <!-- Sticky balk (alleen mobiel) -->
     <div class="sticky" role="region" aria-label={lang === 'nl' ? 'Snel boeken' : 'Quick booking'}>
       <a class="btn btn--primary" href={links.booking} data-cta="book-sticky" data-cta-type="booking">{c.sticky.book}</a>
-      <a class="btn btn--wa" href={waLink(c.stickyWaMsg)} {...ext} data-cta="whatsapp-sticky" data-cta-type="whatsapp">
+      <a class="btn btn--wa" href={waLink(c.stickyWaMsg)} target="_blank" rel="noopener" data-cta="whatsapp-sticky" data-cta-type="whatsapp">
         <Icon name="whatsapp" size={20} /><span>{c.sticky.wa}</span>
       </a>
     </div>

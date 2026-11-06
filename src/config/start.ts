@@ -10,10 +10,15 @@
  */
 
 export const links = {
+  /**
+   * Volledige URL's, zodat ze ook werken als /start los draait
+   * (bijv. op anytimestarterspage.vercel.app) en niet alleen op de hoofdsite.
+   */
+  home: 'https://anytimemusic.nl/',
   /** Reserveren / losse boeking. */
-  booking: '/studio/booking',
+  booking: 'https://anytimemusic.nl/studio/booking',
   /** Gratis rondleiding. */
-  contact: '/contact',
+  contact: 'https://anytimemusic.nl/contact',
   /** Zonder de QR-trackingparameters, zodat bezoeken niet als QR-scan meetellen. */
   instagram: 'https://www.instagram.com/anytimemusicstudio/',
 } as const;
