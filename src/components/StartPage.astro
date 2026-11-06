@@ -12,6 +12,7 @@ import {
   links, plans, productionDay, singleHourPrice, business,
   perHour, waLink, eur, whatsapp,
 } from '../config/start';
+import Analytics from '@vercel/analytics/astro';
 
 interface Props { lang: Lang }
 const { lang } = Astro.props;
@@ -113,6 +114,7 @@ const jsonLd = [
 <html lang={lang}>
   <head>
     <meta charset="utf-8" />
+    <Analytics />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <meta name="theme-color" content="#060607" />
     <title>{c.meta.title}</title>
