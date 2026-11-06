@@ -2,21 +2,20 @@
 /**
  * /start: snelle route naar verkoop.
  * Elke CTA heeft data-cta (uniek) + data-cta-type (whatsapp | booking |
- * form | contact | anchor) zodat je later per klik kunt meten.
+ * contact | anchor | nav | social) zodat je later per klik kunt meten.
  * Geen client-side JavaScript: FAQ = <details>, sticky balk = CSS.
  */
 import '../styles/brand.css';
 import Icon from './Icon.astro';
-import { t, testimonials, type Lang } from '../i18n/start';
+import { t, type Lang } from '../i18n/start';
 import {
   links, plans, productionDay, singleHourPrice, business,
-  perHour, waLink, membershipFormLink, eur, whatsapp,
+  perHour, waLink, eur, whatsapp,
 } from '../config/start';
 
 interface Props { lang: Lang }
 const { lang } = Astro.props;
 const c = t[lang];
-const quotes = testimonials[lang];
 
 const site = Astro.site!;
 const canonical = new URL(c.path, site).href;
@@ -229,13 +228,10 @@ const ext = { target: '_blank', rel: 'noopener' };
                   <p class="plan__save">{c.room.saving(ph)}</p>
                   <a
                     class:list={['btn', 'btn--block', p.popular ? 'btn--primary' : 'btn--ghost']}
-                    href={membershipFormLink(c.room.planLabel(p))}
-                    target="_blank" rel="noopener"
-                    data-cta={`plan-${p.id}`} data-cta-type="form"
-                  >{c.room.cta}</a>
-                  <a class="plan__wa" href={waLink(c.room.waMsg(p))} {...ext} data-cta={`whatsapp-plan-${p.id}`} data-cta-type="whatsapp">
-                    <Icon name="whatsapp" size={16} />{c.room.waCta}
-                  </a>
+                    href={waLink(c.room.waMsg(p))}
+                    {...ext}
+                    data-cta={`plan-${p.id}`} data-cta-type="whatsapp"
+                  ><Icon name="whatsapp" size={18} /><span>{c.room.cta}</span></a>
                 </li>
               );
             })}
@@ -309,24 +305,7 @@ const ext = { target: '_blank', rel: 'noopener' };
         </div>
       </section>
 
-      <!-- 7. Social proof (alleen als er testimonials in de config staan) -->
-      {quotes.length > 0 && (
-        <section class="section" aria-labelledby="proof-title">
-          <div class="container">
-            <h2 id="proof-title" class="h2">{c.proof.title}</h2>
-            <ul class="quotes" role="list">
-              {quotes.map((q) => (
-                <li class="card quote">
-                  <blockquote><p>“{q.quote}”</p></blockquote>
-                  <p class="quote__by"><strong>{q.name}</strong> · {q.role}</p>
-                </li>
-              ))}
-            </ul>
-          </div>
-        </section>
-      )}
-
-      <!-- 8. FAQ -->
+      <!-- 7. FAQ -->
       <section class="section" aria-labelledby="faq-title">
         <div class="container container--narrow">
           <h2 id="faq-title" class="h2">{c.faq.title}</h2>
@@ -346,7 +325,7 @@ const ext = { target: '_blank', rel: 'noopener' };
         </div>
       </section>
 
-      <!-- 9. Afsluitende CTA -->
+      <!-- 8. Afsluitende CTA -->
       <section class="section">
         <div class="container container--narrow">
           <div class="card final">
@@ -473,9 +452,10 @@ const ext = { target: '_blank', rel: 'noopener' };
 
   /* Plannen */
   .plans { list-style: none; padding: 0; margin: 0 0 1rem; display: grid; gap: .9rem; }
-  @media (min-width: 640px) { .plans { grid-template-columns: 1fr 1fr; } }
-  @media (min-width: 1000px) { .plans { grid-template-columns: repeat(4, 1fr); } }
-  .plan { position: relative; padding: 1.4rem 1.25rem 1.1rem; display: flex; flex-direction: column; }
+  @media (min-width: 640px) { .plans { grid-template-columns: repeat(2, 1fr); } }
+  @media (min-width: 900px) { .plans { grid-template-columns: repeat(3, 1fr); } }
+  @media (min-width: 1150px) { .plans { grid-template-columns: repeat(5, 1fr); } .plan .plan__per { display: block; margin-top: .2rem; } }
+  .plan { position: relative; padding: 1.4rem 1.15rem 1.15rem; display: flex; flex-direction: column; }
   .plan--popular { border-color: var(--rose-400); box-shadow: var(--shadow-glow); background: linear-gradient(180deg, rgba(232,116,143,.12), rgba(255,255,255,.03)); }
   .badge { position: absolute; top: -.7rem; left: 1.25rem; background: var(--grad-rose); color: #1a070d; font-size: .75rem; font-weight: 700; padding: .25rem .7rem; border-radius: 999px; }
   .plan__hours { margin: 0; font-weight: 600; color: var(--text-muted); }
@@ -486,8 +466,6 @@ const ext = { target: '_blank', rel: 'noopener' };
   .plan__ph strong { color: var(--rose-200); }
   .plan__was { color: var(--text-faint); text-decoration: line-through; font-size: .9rem; }
   .plan__save { margin: .1rem 0 1.1rem; color: var(--text-faint); font-size: .85rem; flex: 1; }
-  .plan__wa { margin-top: .8rem; display: inline-flex; align-self: center; align-items: center; gap: .35rem; font-size: .88rem; color: var(--text-muted); text-decoration: none; padding: .35rem; }
-  .plan__wa:hover { color: var(--wa); }
 
   .single { display: flex; flex-wrap: wrap; align-items: center; gap: .6rem 1rem; padding: 1rem 1.2rem; text-decoration: none; color: var(--text); transition: border-color .2s; }
   .single:hover { border-color: var(--rose-300); }
@@ -521,14 +499,6 @@ const ext = { target: '_blank', rel: 'noopener' };
   .role strong { font-size: 1.1rem; }
   .role > span { color: var(--text-muted); }
   .role .role__go { color: var(--rose-200); font-weight: 600; display: inline-flex; align-items: center; gap: .3rem; margin-top: .3rem; }
-
-  /* Quotes */
-  .quotes { list-style: none; padding: 0; margin: 1.25rem 0 0; display: grid; gap: .75rem; }
-  @media (min-width: 800px) { .quotes { grid-template-columns: repeat(3, 1fr); } }
-  .quote { padding: 1.2rem; }
-  .quote blockquote { margin: 0; }
-  .quote blockquote p { margin: 0; }
-  .quote__by { margin: .8rem 0 0; color: var(--text-muted); font-size: .9rem; }
 
   /* FAQ */
   .faq { display: grid; gap: .6rem; margin-top: 1.25rem; }

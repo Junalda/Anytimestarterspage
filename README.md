@@ -14,14 +14,14 @@ npm run check:links    # na build: WhatsApp-links, data-cta, JSON-LD, prijzen
 
 | Bestand | Inhoud |
 | --- | --- |
-| `src/config/start.ts` | **Alle links** (booking, contact, Google Form + prefill, Instagram), WhatsApp-nummer, bedrijfsgegevens, prijzen |
-| `src/i18n/start.ts` | Teksten NL/EN, WhatsApp-berichten, testimonials |
+| `src/config/start.ts` | **Alle links** (booking, contact, Instagram), WhatsApp-nummer, bedrijfsgegevens, prijzen |
+| `src/i18n/start.ts` | Teksten NL/EN, WhatsApp-berichten |
 | `src/components/StartPage.astro` | Opmaak, JSON-LD |
 
 ## Meten
 
 Elke link heeft `data-cta` (uniek, bijv. `plan-200`, `whatsapp-header`, `book-sticky`) en `data-cta-type`
-(`whatsapp`, `booking`, `form`, `contact`, `anchor`, `nav`, `social`). Voorbeeld voor GA4/GTM:
+(`whatsapp`, `booking`, `contact`, `anchor`, `nav`, `social`). Voorbeeld voor GA4/GTM:
 
 ```js
 document.addEventListener('click', (e) => {

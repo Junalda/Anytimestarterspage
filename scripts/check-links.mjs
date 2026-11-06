@@ -3,7 +3,7 @@ import { readFileSync } from 'node:fs';
 
 const WA = 'https://wa.me/31643187444';
 const files = ['dist/start/index.html', 'dist/en/start/index.html'];
-const allowedEuro = new Set(['€35', '€90', '€200', '€300', '€400', '€750', '€30', '€25', '€5', '€10']);
+const allowedEuro = new Set(['€35', '€90', '€165', '€200', '€300', '€400', '€750', '€30', '€27,50', '€25', '€5', '€7,50', '€10']);
 let fail = 0;
 const bad = (f, m) => { fail++; console.error(`✗ ${f}: ${m}`); };
 
@@ -40,7 +40,7 @@ for (const f of files) {
 
   // 4. Alleen prijzen uit het nieuwe aanbod
   const text = html.replace(/<script[\s\S]*?<\/script>/g, '').replace(/<[^>]+>/g, ' ');
-  for (const m of new Set(text.match(/€\s?[\d.,]+/g) || [])) if (!allowedEuro.has(m.replace(/\s/g, ''))) bad(f, `onbekende prijs ${m}`);
+  for (const m of new Set(text.match(/€\s?\d[\d.]*(,\d{2})?/g) || [])) if (!allowedEuro.has(m.replace(/\s/g, ''))) bad(f, `onbekende prijs ${m}`);
 }
 console.log(fail ? `\n${fail} fout(en)` : '\nAlles OK');
 process.exit(fail ? 1 : 0);

@@ -6,12 +6,6 @@ import { plans, productionDay as pd, singleHourPrice, eur, type Plan } from '../
 
 export type Lang = 'nl' | 'en';
 
-export interface Testimonial {
-  quote: string;
-  name: string;
-  role: string;
-}
-
 const planLabel = {
   nl: (p: Plan) => `${eur(p.price)} per maand (${p.hours} uur)`,
   en: (p: Plan) => `${eur(p.price)} per month (${p.hours} hours)`,
@@ -58,9 +52,7 @@ export const t = {
       saving: (n: number) => `${eur(singleHourPrice - n)} per uur goedkoper dan los`,
       popular: 'Meest gekozen',
       cta: 'Kies dit plan',
-      waCta: 'Of app ons hierover',
       waMsg: (p: Plan) => `Hoi! Ik heb interesse in het abonnement van ${planLabel.nl(p)}.`,
-      planLabel: planLabel.nl,
       single: {
         title: 'Liever eenmalig?',
         text: `Losse boeking ${eur(singleHourPrice)} per uur, zonder abonnement.`,
@@ -91,13 +83,12 @@ export const t = {
     roles: {
       title: 'Twijfel je? Kies op basis van je rol',
       items: [
-        { id: 'producer', title: 'Producer', text: `${eur(plans[0].price)}- of ${eur(plans[1].price)}-plan`, href: '#ruimte' },
-        { id: 'band', title: 'Band', text: `${eur(plans[2].price)}- of ${eur(plans[3].price)}-plan`, href: '#ruimte' },
+        { id: 'producer', title: 'Producer', text: `${eur(plans[0].price)}-, ${eur(plans[1].price)}- of ${eur(plans[2].price)}-plan`, href: '#ruimte' },
+        { id: 'band', title: 'Band', text: `${eur(plans[3].price)}- of ${eur(plans[4].price)}-plan`, href: '#ruimte' },
         { id: 'artiest', title: 'Artiest', text: 'Productiedag + een plan', href: '#content' },
       ],
       go: 'Bekijk',
     },
-    proof: { title: 'Wat makers zeggen' },
     faq: {
       title: 'Veelgestelde vragen',
       items: [
@@ -163,9 +154,7 @@ export const t = {
       saving: (n: number) => `${eur(singleHourPrice - n)}/hour less than booking single hours`,
       popular: 'Most popular',
       cta: 'Choose this plan',
-      waCta: 'Or text us about it',
       waMsg: (p: Plan) => `Hi! I'm interested in the ${planLabel.en(p)} plan.`,
-      planLabel: planLabel.nl, // De Google Form is NL: prefill blijft NL.
       single: {
         title: 'Just once?',
         text: `Single booking ${eur(singleHourPrice)} per hour, no subscription.`,
@@ -196,13 +185,12 @@ export const t = {
     roles: {
       title: 'Not sure? Choose by role',
       items: [
-        { id: 'producer', title: 'Producer', text: `${eur(plans[0].price)} or ${eur(plans[1].price)} plan`, href: '#ruimte' },
-        { id: 'band', title: 'Band', text: `${eur(plans[2].price)} or ${eur(plans[3].price)} plan`, href: '#ruimte' },
+        { id: 'producer', title: 'Producer', text: `${eur(plans[0].price)}, ${eur(plans[1].price)} or ${eur(plans[2].price)} plan`, href: '#ruimte' },
+        { id: 'band', title: 'Band', text: `${eur(plans[3].price)} or ${eur(plans[4].price)} plan`, href: '#ruimte' },
         { id: 'artiest', title: 'Artist', text: 'Production day + a plan', href: '#content' },
       ],
       go: 'View',
     },
-    proof: { title: 'What makers say' },
     faq: {
       title: 'FAQ',
       items: [
@@ -231,13 +219,3 @@ export const t = {
 
 export type Copy = (typeof t)['nl'];
 
-/**
- * Testimonials van de homepage, ZONDER prijzen of pakketnamen.
- * TODO: kopieer hier de bestaande testimonials van de homepage
- * (die waren niet bereikbaar bij het bouwen). Zolang deze lijst
- * leeg is, wordt de sectie niet getoond.
- */
-export const testimonials: Record<Lang, Testimonial[]> = {
-  nl: [],
-  en: [],
-};

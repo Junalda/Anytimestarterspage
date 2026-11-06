@@ -7,8 +7,6 @@
  *  pakketnamen van de rest van de site worden hier bewust niet
  *  gebruikt. Alles op de pagina (kaarten, prijs per uur, FAQ,
  *  JSON-LD) wordt uit dit bestand afgeleid.
- *
- *  Waarden met  TODO  moeten nog met de echte waarde gevuld worden.
  */
 
 export const links = {
@@ -16,21 +14,8 @@ export const links = {
   booking: '/studio/booking',
   /** Gratis rondleiding. */
   contact: '/contact',
-  /**
-   * Google Form voor lidmaatschap.
-   * TODO: vervang door de echte link (de "viewform"-URL, niet forms.gle,
-   * anders werkt de prefill niet).
-   */
-  membershipForm: 'https://docs.google.com/forms/d/e/TODO_FORM_ID/viewform',
-  /**
-   * Prefill van het plan in de Google Form. Vul het entry-ID van de
-   * vraag "Welk abonnement?" in (bijv. 'entry.123456789'). Zo vind je het:
-   * Form → ⋮ → "Vooraf ingevulde link ophalen" → vul iets in → kopieer link.
-   * Leeg = geen prefill, de link werkt dan nog steeds.
-   */
-  membershipFormPlanEntry: '',
-  /** TODO: controleer het Instagram-account. */
-  instagram: 'https://www.instagram.com/anytimemusic.nl/',
+  /** Zonder de QR-trackingparameters, zodat bezoeken niet als QR-scan meetellen. */
+  instagram: 'https://www.instagram.com/anytimemusicstudio/',
 } as const;
 
 export const whatsapp = {
@@ -66,6 +51,7 @@ export interface Plan {
 
 export const plans: Plan[] = [
   { id: '90', price: 90, hours: 3 },
+  { id: '165', price: 165, hours: 6 },
   { id: '200', price: 200, hours: 8, popular: true },
   { id: '300', price: 300, hours: 12 },
   { id: '400', price: 400, hours: 16 },
@@ -82,8 +68,8 @@ export const productionDay = {
 
 /* ─────────────────────────── Helpers ─────────────────────────── */
 
-/** Prijs per uur, afgerond op hele euro's. */
-export const perHour = (p: Plan) => Math.round(p.price / p.hours);
+/** Prijs per uur, op centen afgerond (€165 / 6 = €27,50). */
+export const perHour = (p: Plan) => Math.round((p.price / p.hours) * 100) / 100;
 
 /** WhatsApp-link met optioneel vooringevuld bericht (URL-encoded). */
 export function waLink(message?: string): string {
@@ -91,14 +77,6 @@ export function waLink(message?: string): string {
   return message ? `${base}?text=${encodeURIComponent(message)}` : base;
 }
 
-/** Google Form-link, met het plan als prefill als het entry-ID bekend is. */
-export function membershipFormLink(planLabel: string): string {
-  if (!links.membershipFormPlanEntry) return links.membershipForm;
-  const url = new URL(links.membershipForm);
-  url.searchParams.set('usp', 'pp_url');
-  url.searchParams.set(links.membershipFormPlanEntry, planLabel);
-  return url.toString();
-}
-
-/** "€1.234" in NL-notatie. */
-export const eur = (n: number) => `€${n.toLocaleString('nl-NL')}`;
+/** "€1.234" of "€27,50" in NL-notatie (centen alleen als die er zijn). */
+export const eur = (n: number) =>
+  `€${n.toLocaleString('nl-NL', Number.isInteger(n) ? {} : { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
