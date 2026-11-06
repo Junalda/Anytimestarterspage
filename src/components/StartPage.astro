@@ -1,0 +1,571 @@
+---
+/**
+ * /start: snelle route naar verkoop.
+ * Elke CTA heeft data-cta (uniek) + data-cta-type (whatsapp | booking |
+ * form | contact | anchor) zodat je later per klik kunt meten.
+ * Geen client-side JavaScript: FAQ = <details>, sticky balk = CSS.
+ */
+import '../styles/brand.css';
+import Icon from './Icon.astro';
+import { t, testimonials, type Lang } from '../i18n/start';
+import {
+  links, plans, productionDay, singleHourPrice, business,
+  perHour, waLink, membershipFormLink, eur, whatsapp,
+} from '../config/start';
+
+interface Props { lang: Lang }
+const { lang } = Astro.props;
+const c = t[lang];
+const quotes = testimonials[lang];
+
+const site = Astro.site!;
+const canonical = new URL(c.path, site).href;
+const altUrl = new URL(c.altPath, site).href;
+const nlUrl = new URL(t.nl.path, site).href;
+const enUrl = new URL(t.en.path, site).href;
+const ogImage = new URL('/og.png', site).href;
+
+/* ───────── JSON-LD ───────── */
+const offers = [
+  ...plans.map((p) => ({
+    '@type': 'Offer',
+    name: lang === 'nl' ? `Repetitieruimte abonnement ${p.hours} uur per maand` : `Rehearsal space plan, ${p.hours} hours per month`,
+    price: p.price.toFixed(2),
+    priceCurrency: 'EUR',
+    url: `${canonical}#ruimte`,
+    priceSpecification: {
+      '@type': 'UnitPriceSpecification',
+      price: p.price.toFixed(2),
+      priceCurrency: 'EUR',
+      referenceQuantity: { '@type': 'QuantitativeValue', value: 1, unitCode: 'MON' },
+    },
+    eligibleQuantity: { '@type': 'QuantitativeValue', value: p.hours, unitCode: 'HUR' },
+  })),
+  {
+    '@type': 'Offer',
+    name: lang === 'nl' ? 'Losse boeking repetitieruimte' : 'Single rehearsal space booking',
+    price: singleHourPrice.toFixed(2),
+    priceCurrency: 'EUR',
+    url: new URL(links.booking, site).href,
+    priceSpecification: {
+      '@type': 'UnitPriceSpecification',
+      price: singleHourPrice.toFixed(2),
+      priceCurrency: 'EUR',
+      referenceQuantity: { '@type': 'QuantitativeValue', value: 1, unitCode: 'HUR' },
+    },
+  },
+  {
+    '@type': 'Offer',
+    name: lang === 'nl' ? 'Productiedag muziekcontent (4 video\'s + 4 foto\'s)' : 'Music content production day (4 videos + 4 photos)',
+    description: c.content.sub,
+    price: productionDay.price.toFixed(2),
+    priceCurrency: 'EUR',
+    url: `${canonical}#content`,
+    priceSpecification: {
+      '@type': 'PriceSpecification',
+      price: productionDay.price.toFixed(2),
+      priceCurrency: 'EUR',
+      valueAddedTaxIncluded: productionDay.vatIncluded,
+    },
+  },
+];
+
+const jsonLd = [
+  {
+    '@context': 'https://schema.org',
+    '@type': ['LocalBusiness', 'MusicVenue'],
+    '@id': `${business.url}/#business`,
+    name: business.name,
+    legalName: business.legalName,
+    url: business.url,
+    image: ogImage,
+    logo: new URL('/brand/logo.png', site).href,
+    telephone: business.telephone,
+    address: {
+      '@type': 'PostalAddress',
+      streetAddress: business.street,
+      postalCode: business.postalCode,
+      addressLocality: business.city,
+      addressCountry: business.country,
+    },
+    openingHoursSpecification: {
+      '@type': 'OpeningHoursSpecification',
+      dayOfWeek: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'],
+      opens: '00:00',
+      closes: '23:59',
+    },
+    sameAs: [links.instagram],
+    makesOffer: offers,
+  },
+  {
+    '@context': 'https://schema.org',
+    '@type': 'FAQPage',
+    inLanguage: lang,
+    mainEntity: c.faq.items.map((f) => ({
+      '@type': 'Question',
+      name: f.q,
+      acceptedAnswer: { '@type': 'Answer', text: f.a },
+    })),
+  },
+];
+
+/** Gemeenschappelijke attributen voor externe WhatsApp-links. */
+const ext = { target: '_blank', rel: 'noopener' };
+---
+<!doctype html>
+<html lang={lang}>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="theme-color" content="#060607" />
+    <title>{c.meta.title}</title>
+    <meta name="description" content={c.meta.description} />
+    <link rel="canonical" href={canonical} />
+    <link rel="alternate" hreflang="nl" href={nlUrl} />
+    <link rel="alternate" hreflang="en" href={enUrl} />
+    <link rel="alternate" hreflang="x-default" href={nlUrl} />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <meta property="og:type" content="website" />
+    <meta property="og:locale" content={lang === 'nl' ? 'nl_NL' : 'en_GB'} />
+    <meta property="og:site_name" content={business.name} />
+    <meta property="og:title" content={c.meta.title} />
+    <meta property="og:description" content={c.meta.description} />
+    <meta property="og:image" content={ogImage} />
+    <meta property="og:url" content={canonical} />
+    <meta name="twitter:card" content="summary_large_image" />
+    <link rel="preload" href="/brand/logo-header.webp" as="image" type="image/webp" fetchpriority="high" />
+    <script type="application/ld+json" set:html={JSON.stringify(jsonLd)} />
+  </head>
+  <body>
+    <a class="skip" href="#main">{lang === 'nl' ? 'Naar de inhoud' : 'Skip to content'}</a>
+
+    <!-- 1. Header -->
+    <header class="hdr">
+      <div class="container hdr__in">
+        <a href="/" class="hdr__logo" aria-label={c.header.home} data-cta="logo-header" data-cta-type="nav">
+          <img src="/brand/logo-header.webp" alt="Anytime Music" width="137" height="60" fetchpriority="high" decoding="async" />
+        </a>
+        <nav class="hdr__actions" aria-label={lang === 'nl' ? 'Snelle acties' : 'Quick actions'}>
+          <a class="lang lang--hdr" href={c.altPath} hreflang={t[lang === 'nl' ? 'en' : 'nl'].lang} data-cta="lang-switch-header" data-cta-type="nav">{c.altLabel}</a>
+          <a class="btn btn--wa btn--sm" href={waLink(c.headerWaMsg)} {...ext} data-cta="whatsapp-header" data-cta-type="whatsapp">
+            <Icon name="whatsapp" size={18} /><span>{c.header.whatsapp}</span>
+          </a>
+          <a class="btn btn--primary btn--sm" href={links.booking} data-cta="book-header" data-cta-type="booking">{c.header.book}</a>
+        </nav>
+      </div>
+    </header>
+
+    <main id="main">
+      <!-- 2. Hero -->
+      <section class="hero">
+        <div class="container hero__in">
+          <p class="eyebrow">{c.hero.eyebrow}</p>
+          <h1 class="hero__title">
+            <span>{c.hero.title[0]}</span>
+            <span class="grad">{c.hero.title[1]}</span>
+          </h1>
+          <p class="hero__sub">{c.hero.sub}</p>
+
+          <div class="choices">
+            <a class="choice" href="#ruimte" data-cta="choice-ruimte" data-cta-type="anchor">
+              <span class="choice__emoji" aria-hidden="true">🎶</span>
+              <span class="choice__txt"><strong>{c.hero.choiceRoom}</strong><small>{c.hero.choiceRoomSub}</small></span>
+              <Icon name="arrow" size={22} class="choice__arrow" />
+            </a>
+            <a class="choice" href="#content" data-cta="choice-content" data-cta-type="anchor">
+              <span class="choice__emoji" aria-hidden="true">🎬</span>
+              <span class="choice__txt"><strong>{c.hero.choiceContent}</strong><small>{c.hero.choiceContentSub}</small></span>
+              <Icon name="arrow" size={22} class="choice__arrow" />
+            </a>
+          </div>
+
+          <a class="btn btn--wa btn--block-m hero__wa" href={waLink(c.heroWaMsg)} {...ext} data-cta="whatsapp-hero" data-cta-type="whatsapp">
+            <Icon name="whatsapp" size={20} /><span>{c.hero.whatsapp}</span>
+          </a>
+
+          <ul class="trust" role="list">
+            {c.hero.trust.map((item) => (
+              <li><Icon name="infinity" size={18} class="inf" />{item}</li>
+            ))}
+          </ul>
+        </div>
+      </section>
+
+      <!-- 3. Herken je dit? -->
+      <section class="section" aria-labelledby="pains-title">
+        <div class="container">
+          <h2 id="pains-title" class="h2">{c.pains.title}</h2>
+          <ul class="pains" role="list">
+            {c.pains.items.map((p) => (
+              <li class="card pain">
+                <span class="pain__who"><Icon name="infinity" size={16} class="inf" />{p.who}</span>
+                <p>{p.text}</p>
+              </li>
+            ))}
+          </ul>
+        </div>
+      </section>
+
+      <!-- 4. Pad A: repetitieruimte -->
+      <section id="ruimte" class="section" aria-labelledby="ruimte-title">
+        <div class="container">
+          <p class="eyebrow">{c.room.eyebrow}</p>
+          <h2 id="ruimte-title" class="h2">{c.room.title}</h2>
+          <p class="lead">{c.room.sub}</p>
+
+          <ul class="plans" role="list">
+            {plans.map((p) => {
+              const ph = perHour(p);
+              return (
+                <li class:list={['card', 'plan', { 'plan--popular': p.popular }]}>
+                  {p.popular && <span class="badge">{c.room.popular}</span>}
+                  <p class="plan__hours">{c.room.hours(p.hours)}</p>
+                  <p class="plan__price"><span class="plan__amount">{eur(p.price)}</span> <span class="plan__per">{c.room.perMonth}</span></p>
+                  <p class="plan__ph">
+                    <strong>{c.room.perHour(ph)}</strong>
+                    <span class="plan__was">{eur(singleHourPrice)}</span>
+                  </p>
+                  <p class="plan__save">{c.room.saving(ph)}</p>
+                  <a
+                    class:list={['btn', 'btn--block', p.popular ? 'btn--primary' : 'btn--ghost']}
+                    href={membershipFormLink(c.room.planLabel(p))}
+                    target="_blank" rel="noopener"
+                    data-cta={`plan-${p.id}`} data-cta-type="form"
+                  >{c.room.cta}</a>
+                  <a class="plan__wa" href={waLink(c.room.waMsg(p))} {...ext} data-cta={`whatsapp-plan-${p.id}`} data-cta-type="whatsapp">
+                    <Icon name="whatsapp" size={16} />{c.room.waCta}
+                  </a>
+                </li>
+              );
+            })}
+          </ul>
+
+          <a class="card single" href={links.booking} data-cta="book-single" data-cta-type="booking">
+            <Icon name="calendar" size={24} class="single__icon" />
+            <span class="single__txt"><strong>{c.room.single.title}</strong> {c.room.single.text}</span>
+            <span class="single__cta">{c.room.single.cta}<Icon name="arrow" size={18} /></span>
+          </a>
+
+          <p class="usp"><Icon name="infinity" size={18} class="inf" />{c.room.usp}</p>
+        </div>
+      </section>
+
+      <!-- 5. Pad B: content -->
+      <section id="content" class="section" aria-labelledby="content-title">
+        <div class="container">
+          <div class="card prod">
+            <div class="prod__main">
+              <p class="eyebrow">{c.content.eyebrow}</p>
+              <h2 id="content-title" class="h2">{c.content.title}</h2>
+              <p class="lead">{c.content.sub}</p>
+              <p class="prod__price"><span class="plan__amount">{c.content.price}</span> <span class="plan__per">{c.content.vat}</span></p>
+              <ul class="checks" role="list">
+                {c.content.checklist.map((item) => (
+                  <li><Icon name="check" size={18} class="check" />{item}</li>
+                ))}
+              </ul>
+              <div class="prod__ctas">
+                <a class="btn btn--primary btn--block-m" href={waLink(c.content.waMsg)} {...ext} data-cta="productiedag-whatsapp" data-cta-type="whatsapp">
+                  <Icon name="whatsapp" size={20} /><span>{c.content.cta}</span>
+                </a>
+                <a class="link" href={links.contact} data-cta="productiedag-contact" data-cta-type="contact">{c.content.secondary} <Icon name="arrow" size={16} /></a>
+              </div>
+            </div>
+
+            <div class="prod__timeline">
+              <h3 class="h3">{c.content.timelineTitle}</h3>
+              <ol class="weeks" role="list">
+                {[1, 2, 3, 4].map((n) => (
+                  <li class="week">
+                    <span class="week__n">{c.content.week(n)}</span>
+                    <span class="week__items">
+                      <span class="chip">🎬 {c.content.weekItems[0]}</span>
+                      <span class="chip">📸 {c.content.weekItems[1]}</span>
+                    </span>
+                  </li>
+                ))}
+              </ol>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 6. Kies op rol -->
+      <section class="section" aria-labelledby="roles-title">
+        <div class="container">
+          <h2 id="roles-title" class="h2">{c.roles.title}</h2>
+          <ul class="roles" role="list">
+            {c.roles.items.map((r) => (
+              <li>
+                <a class="card role" href={r.href} data-cta={`role-${r.id}`} data-cta-type="anchor">
+                  <strong>{r.title}</strong>
+                  <span>{r.text}</span>
+                  <span class="role__go">{c.roles.go}<Icon name="arrow" size={16} /></span>
+                </a>
+              </li>
+            ))}
+          </ul>
+        </div>
+      </section>
+
+      <!-- 7. Social proof (alleen als er testimonials in de config staan) -->
+      {quotes.length > 0 && (
+        <section class="section" aria-labelledby="proof-title">
+          <div class="container">
+            <h2 id="proof-title" class="h2">{c.proof.title}</h2>
+            <ul class="quotes" role="list">
+              {quotes.map((q) => (
+                <li class="card quote">
+                  <blockquote><p>“{q.quote}”</p></blockquote>
+                  <p class="quote__by"><strong>{q.name}</strong> · {q.role}</p>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </section>
+      )}
+
+      <!-- 8. FAQ -->
+      <section class="section" aria-labelledby="faq-title">
+        <div class="container container--narrow">
+          <h2 id="faq-title" class="h2">{c.faq.title}</h2>
+          <div class="faq">
+            {c.faq.items.map((f, i) => (
+              <details class="faq__item" name="faq" data-faq={i + 1}>
+                <summary>{f.q}<Icon name="plus" size={20} class="faq__icon" /></summary>
+                <p>
+                  {f.a}
+                  {i === c.faq.items.length - 1 && (
+                    <> <a class="link" href={links.contact} data-cta="faq-contact" data-cta-type="contact">{c.final.tour} <Icon name="arrow" size={14} /></a></>
+                  )}
+                </p>
+              </details>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <!-- 9. Afsluitende CTA -->
+      <section class="section">
+        <div class="container container--narrow">
+          <div class="card final">
+            <Icon name="infinity" size={40} class="inf final__inf" />
+            <h2 class="h2">{c.final.title}</h2>
+            <p class="lead">{c.final.text}</p>
+            <div class="final__ctas">
+              <a class="btn btn--wa" href={waLink(c.final.waMsg)} {...ext} data-cta="whatsapp-final" data-cta-type="whatsapp">
+                <Icon name="whatsapp" size={20} /><span>{c.final.wa}</span>
+              </a>
+              <a class="btn btn--ghost" href={links.contact} data-cta="contact-final" data-cta-type="contact">{c.final.tour}</a>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <footer class="ftr">
+      <div class="container ftr__in">
+        <span>{business.legalName} · {c.footer.address}</span>
+        <span class="ftr__links">
+          <a href={waLink(c.stickyWaMsg)} {...ext} data-cta="whatsapp-footer" data-cta-type="whatsapp">{whatsapp.display}</a>
+          <a href={links.instagram} target="_blank" rel="noopener" data-cta="instagram-footer" data-cta-type="social">{c.footer.instagram}</a>
+          <a href={c.altPath} hreflang={lang === 'nl' ? 'en' : 'nl'} data-cta="lang-switch-footer" data-cta-type="nav">{c.altLabel}</a>
+        </span>
+      </div>
+    </footer>
+
+    <!-- Sticky balk (alleen mobiel) -->
+    <div class="sticky" role="region" aria-label={lang === 'nl' ? 'Snel boeken' : 'Quick booking'}>
+      <a class="btn btn--primary" href={links.booking} data-cta="book-sticky" data-cta-type="booking">{c.sticky.book}</a>
+      <a class="btn btn--wa" href={waLink(c.stickyWaMsg)} {...ext} data-cta="whatsapp-sticky" data-cta-type="whatsapp">
+        <Icon name="whatsapp" size={20} /><span>{c.sticky.wa}</span>
+      </a>
+    </div>
+  </body>
+</html>
+
+<style>
+  :root { --container: 72rem; --hdr-h: 64px; --sticky-h: 76px; --wa: #25d366; }
+  html { scroll-padding-top: calc(var(--hdr-h) + 12px); }
+
+  .skip { position: absolute; left: -9999px; top: 0; }
+  .skip:focus { left: 1rem; top: 1rem; z-index: 100; background: var(--text); color: var(--bg); padding: .5rem 1rem; border-radius: 999px; }
+
+  .container { width: 100%; max-width: var(--container); margin-inline: auto; padding-inline: clamp(1.1rem, 5vw, 2rem); }
+  .container--narrow { max-width: 48rem; }
+
+  /* Typografie */
+  .eyebrow { font-size: .78rem; font-weight: 600; letter-spacing: .14em; text-transform: uppercase; color: var(--rose-300); margin: 0 0 .8rem; }
+  .h2 { font-size: clamp(1.6rem, 4.5vw, 2.4rem); line-height: 1.1; letter-spacing: -.03em; margin: 0 0 .75rem; }
+  .h3 { font-size: 1.05rem; margin: 0 0 1rem; color: var(--text-muted); font-weight: 600; }
+  .lead { color: var(--text-muted); margin: 0 0 1.75rem; max-width: 40rem; }
+  .grad { background: var(--grad-rose); -webkit-background-clip: text; background-clip: text; color: transparent; }
+  .inf { color: var(--rose-300); flex: none; }
+
+  /* Knoppen */
+  .btn {
+    display: inline-flex; align-items: center; justify-content: center; gap: .5rem;
+    min-height: 48px; padding: .75rem 1.3rem; border-radius: 999px;
+    font-weight: 600; font-size: 1rem; text-decoration: none; white-space: nowrap;
+    border: 1px solid transparent; transition: transform .2s var(--ease), background-color .2s, border-color .2s, box-shadow .2s;
+  }
+  .btn:active { transform: scale(.98); }
+  .btn--sm { min-height: 40px; padding: .45rem .9rem; font-size: .9rem; }
+  .btn--primary { background: var(--grad-rose); color: #1a070d; box-shadow: var(--shadow-glow); }
+  .btn--primary:hover { filter: brightness(1.06); }
+  .btn--wa { background: var(--wa); color: #04210f; }
+  .btn--wa:hover { filter: brightness(1.06); }
+  .btn--ghost { background: var(--surface-strong); color: var(--text); border-color: var(--hairline-strong); }
+  .btn--ghost:hover { border-color: var(--rose-300); }
+  .btn--block { width: 100%; }
+  @media (max-width: 639px) { .btn--block-m { width: 100%; } }
+  .link { color: var(--rose-200); font-weight: 600; text-decoration: none; display: inline-flex; align-items: center; gap: .3rem; }
+  .link:hover { text-decoration: underline; }
+
+  .card { background: var(--surface); border: 1px solid var(--hairline); border-radius: var(--radius-md); box-shadow: var(--shadow-card); }
+
+  /* Header */
+  .hdr { position: sticky; top: 0; z-index: 50; height: var(--hdr-h); background: rgba(6, 6, 7, .78); backdrop-filter: saturate(160%) blur(14px); -webkit-backdrop-filter: saturate(160%) blur(14px); border-bottom: 1px solid var(--hairline); }
+  .hdr__in { height: 100%; display: flex; align-items: center; justify-content: space-between; gap: .75rem; }
+  .hdr__logo img { height: 30px; width: auto; }
+  .hdr__actions { display: flex; align-items: center; gap: .5rem; }
+  .lang { color: var(--text-muted); text-decoration: none; font-size: .85rem; font-weight: 600; padding: .4rem; }
+  .lang:hover { color: var(--text); }
+  @media (max-width: 400px) {
+    .lang--hdr { display: none; }
+    .hdr__actions .btn--sm { padding-inline: .75rem; }
+  }
+
+  /* Hero */
+  .hero { padding: clamp(2.25rem, 7vw, 5rem) 0 clamp(2rem, 5vw, 3.5rem); }
+  .hero__title { font-size: clamp(2.2rem, 8.5vw, 4.25rem); line-height: 1.02; letter-spacing: -.04em; margin: 0 0 1rem; }
+  .hero__title span { display: block; }
+  .hero__sub { color: var(--text-muted); font-size: clamp(1.02rem, 2.4vw, 1.2rem); margin: 0 0 1.75rem; max-width: 38rem; }
+  .choices { display: grid; gap: .75rem; margin-bottom: 1rem; }
+  @media (min-width: 640px) { .choices { grid-template-columns: 1fr 1fr; max-width: 52rem; } }
+  .choice {
+    display: flex; align-items: center; gap: .9rem; padding: 1.1rem 1.15rem; min-height: 84px;
+    border-radius: var(--radius-md); text-decoration: none; color: var(--text);
+    background: linear-gradient(180deg, rgba(255,255,255,.07), rgba(255,255,255,.03));
+    border: 1px solid var(--hairline-strong); box-shadow: var(--shadow-card);
+    transition: border-color .2s, transform .2s var(--ease), box-shadow .2s;
+  }
+  .choice:hover { border-color: var(--rose-300); box-shadow: var(--shadow-glow); transform: translateY(-2px); }
+  .choice__emoji { font-size: 1.7rem; line-height: 1; }
+  .choice__txt { display: grid; gap: .15rem; flex: 1; }
+  .choice__txt strong { font-size: 1.08rem; line-height: 1.25; }
+  .choice__txt small { color: var(--rose-200); font-size: .88rem; font-weight: 500; }
+  .choice :global(.choice__arrow) { color: var(--rose-300); flex: none; }
+  .hero__wa { margin-bottom: 1.75rem; }
+  .trust { list-style: none; padding: 0; margin: 0; display: flex; flex-wrap: wrap; gap: .5rem 1.1rem; color: var(--text-muted); font-size: .9rem; }
+  .trust li { display: inline-flex; align-items: center; gap: .4rem; }
+
+  /* Secties */
+  .section { padding: clamp(2.5rem, 7vw, 4.5rem) 0; }
+
+  .pains { list-style: none; padding: 0; margin: 1.25rem 0 0; display: grid; gap: .75rem; }
+  @media (min-width: 640px) { .pains { grid-template-columns: 1fr 1fr; } }
+  @media (min-width: 1000px) { .pains { grid-template-columns: repeat(4, 1fr); } }
+  .pain { padding: 1.15rem 1.2rem; }
+  .pain p { margin: .4rem 0 0; }
+  .pain__who { display: inline-flex; align-items: center; gap: .4rem; font-size: .8rem; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--rose-300); }
+
+  /* Plannen */
+  .plans { list-style: none; padding: 0; margin: 0 0 1rem; display: grid; gap: .9rem; }
+  @media (min-width: 640px) { .plans { grid-template-columns: 1fr 1fr; } }
+  @media (min-width: 1000px) { .plans { grid-template-columns: repeat(4, 1fr); } }
+  .plan { position: relative; padding: 1.4rem 1.25rem 1.1rem; display: flex; flex-direction: column; }
+  .plan--popular { border-color: var(--rose-400); box-shadow: var(--shadow-glow); background: linear-gradient(180deg, rgba(232,116,143,.12), rgba(255,255,255,.03)); }
+  .badge { position: absolute; top: -.7rem; left: 1.25rem; background: var(--grad-rose); color: #1a070d; font-size: .75rem; font-weight: 700; padding: .25rem .7rem; border-radius: 999px; }
+  .plan__hours { margin: 0; font-weight: 600; color: var(--text-muted); }
+  .plan__price { margin: .25rem 0 .6rem; }
+  .plan__amount { font-size: 2.4rem; font-weight: 700; letter-spacing: -.04em; line-height: 1; }
+  .plan__per { color: var(--text-muted); font-size: .95rem; }
+  .plan__ph { margin: 0; display: flex; align-items: baseline; gap: .5rem; }
+  .plan__ph strong { color: var(--rose-200); }
+  .plan__was { color: var(--text-faint); text-decoration: line-through; font-size: .9rem; }
+  .plan__save { margin: .1rem 0 1.1rem; color: var(--text-faint); font-size: .85rem; flex: 1; }
+  .plan__wa { margin-top: .8rem; display: inline-flex; align-self: center; align-items: center; gap: .35rem; font-size: .88rem; color: var(--text-muted); text-decoration: none; padding: .35rem; }
+  .plan__wa:hover { color: var(--wa); }
+
+  .single { display: flex; flex-wrap: wrap; align-items: center; gap: .6rem 1rem; padding: 1rem 1.2rem; text-decoration: none; color: var(--text); transition: border-color .2s; }
+  .single:hover { border-color: var(--rose-300); }
+  .single :global(.single__icon) { color: var(--rose-300); }
+  .single__txt { flex: 1 1 14rem; color: var(--text-muted); }
+  .single__txt strong { color: var(--text); }
+  .single__cta { display: inline-flex; align-items: center; gap: .3rem; color: var(--rose-200); font-weight: 600; }
+  .usp { display: flex; gap: .6rem; align-items: flex-start; margin: 1.25rem 0 0; color: var(--text-muted); font-size: .95rem; }
+  .usp :global(.inf) { margin-top: .2rem; }
+
+  /* Productiedag */
+  .prod { display: grid; gap: 2rem; padding: clamp(1.4rem, 4vw, 2.5rem); border-color: var(--rose-400); background: radial-gradient(40rem 20rem at 0% 0%, rgba(232,116,143,.16), transparent 70%), var(--surface); }
+  @media (min-width: 900px) { .prod { grid-template-columns: 1.15fr 1fr; align-items: center; } }
+  .prod .lead { margin-bottom: 1.1rem; }
+  .prod__price { margin: 0 0 1.1rem; }
+  .checks { list-style: none; padding: 0; margin: 0 0 1.5rem; display: grid; gap: .55rem; }
+  .checks li { display: flex; align-items: center; gap: .6rem; }
+  .checks :global(.check) { color: #1a070d; background: var(--grad-rose); border-radius: 50%; padding: 3px; flex: none; }
+  .prod__ctas { display: flex; flex-wrap: wrap; align-items: center; gap: .9rem 1.25rem; }
+  .weeks { list-style: none; padding: 0; margin: 0; display: grid; gap: .6rem; position: relative; }
+  .week { display: flex; align-items: center; justify-content: space-between; gap: .75rem; padding: .8rem 1rem; border-radius: var(--radius-sm); background: var(--surface-strong); border: 1px solid var(--hairline); position: relative; }
+  .week__n { font-weight: 700; }
+  .week__items { display: flex; gap: .4rem; flex-wrap: wrap; justify-content: flex-end; }
+  .chip { font-size: .82rem; padding: .25rem .6rem; border-radius: 999px; background: rgba(232,116,143,.14); color: var(--rose-100); white-space: nowrap; }
+
+  /* Rollen */
+  .roles { list-style: none; padding: 0; margin: 1.25rem 0 0; display: grid; gap: .75rem; }
+  @media (min-width: 640px) { .roles { grid-template-columns: repeat(3, 1fr); } }
+  .role { display: grid; gap: .2rem; padding: 1.1rem 1.2rem; text-decoration: none; color: var(--text); height: 100%; transition: border-color .2s, transform .2s var(--ease); }
+  .role:hover { border-color: var(--rose-300); transform: translateY(-2px); }
+  .role strong { font-size: 1.1rem; }
+  .role > span { color: var(--text-muted); }
+  .role .role__go { color: var(--rose-200); font-weight: 600; display: inline-flex; align-items: center; gap: .3rem; margin-top: .3rem; }
+
+  /* Quotes */
+  .quotes { list-style: none; padding: 0; margin: 1.25rem 0 0; display: grid; gap: .75rem; }
+  @media (min-width: 800px) { .quotes { grid-template-columns: repeat(3, 1fr); } }
+  .quote { padding: 1.2rem; }
+  .quote blockquote { margin: 0; }
+  .quote blockquote p { margin: 0; }
+  .quote__by { margin: .8rem 0 0; color: var(--text-muted); font-size: .9rem; }
+
+  /* FAQ */
+  .faq { display: grid; gap: .6rem; margin-top: 1.25rem; }
+  .faq__item { border: 1px solid var(--hairline); border-radius: var(--radius-sm); background: var(--surface); }
+  .faq__item summary { list-style: none; cursor: pointer; display: flex; justify-content: space-between; align-items: center; gap: 1rem; padding: 1rem 1.1rem; font-weight: 600; min-height: 48px; }
+  .faq__item summary::-webkit-details-marker { display: none; }
+  .faq__item :global(.faq__icon) { color: var(--rose-300); flex: none; transition: transform .2s var(--ease); }
+  .faq__item[open] :global(.faq__icon) { transform: rotate(45deg); }
+  .faq__item p { margin: 0; padding: 0 1.1rem 1.1rem; color: var(--text-muted); }
+
+  /* Afsluiter */
+  .final { text-align: center; padding: clamp(1.75rem, 5vw, 3rem) 1.25rem; }
+  .final :global(.final__inf) { margin: 0 auto 1rem; display: block; }
+  .final .lead { margin-inline: auto; }
+  .final__ctas { display: flex; flex-wrap: wrap; gap: .75rem; justify-content: center; }
+
+  /* Footer */
+  .ftr { border-top: 1px solid var(--hairline); padding: 1.5rem 0; color: var(--text-faint); font-size: .85rem; }
+  .ftr__in { display: flex; flex-wrap: wrap; gap: .75rem 1.5rem; justify-content: space-between; }
+  .ftr__links { display: flex; gap: 1.1rem; }
+  .ftr a { color: var(--text-muted); text-decoration: none; }
+  .ftr a:hover { color: var(--text); }
+
+  /* Sticky balk mobiel */
+  .sticky { display: none; }
+  @media (max-width: 767px) {
+    body { padding-bottom: calc(var(--sticky-h) + env(safe-area-inset-bottom)); }
+    .sticky {
+      display: grid; grid-template-columns: 1fr 1fr; gap: .6rem;
+      position: fixed; z-index: 60; left: 0; right: 0; bottom: 0;
+      padding: .7rem clamp(1.1rem, 5vw, 2rem) calc(.7rem + env(safe-area-inset-bottom));
+      background: rgba(6, 6, 7, .9); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
+      border-top: 1px solid var(--hairline);
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .btn, .choice, .role, .faq__icon { transition: none; }
+  }
+</style>

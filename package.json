@@ -1,0 +1,16 @@
+{
+  "name": "anytime-music-start",
+  "type": "module",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Startpagina /start voor anytimemusic.nl: snelle route naar repetitieruimte-abonnement of productiedag.",
+  "scripts": {
+    "dev": "astro dev",
+    "build": "astro build",
+    "preview": "astro preview",
+    "check:links": "node scripts/check-links.mjs"
+  },
+  "dependencies": {
+    "astro": "^4.16.18"
+  }
+}
