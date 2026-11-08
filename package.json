@@ -1,21 +1,32 @@
 {
-  "name": "anytime-music-start",
+  "name": "inwardout-website",
   "type": "module",
-  "version": "1.0.0",
+  "version": "0.1.0",
   "private": true,
-  "description": "Startpagina /start voor anytimemusic.nl: snelle route naar repetitieruimte-abonnement of productiedag.",
+  "description": "Website for InWardOut, the practice of Jan Leyssens. Astro + TypeScript + Tailwind CSS, hosted on Vercel.",
   "scripts": {
     "dev": "astro dev",
     "build": "astro build",
     "preview": "astro preview",
-    "check:links": "node scripts/check-links.mjs"
-  },
-  "dependencies": {
-    "@vercel/analytics": "^2.0.1",
-    "@vercel/speed-insights": "^2.1.0",
-    "astro": "^4.16.18"
+    "check": "astro check",
+    "check:links": "node scripts/check-links.mjs",
+    "verify": "astro check && astro build && node scripts/check-links.mjs"
   },
   "engines": {
-    "node": "22.x"
+    "node": ">=22.12.0"
+  },
+  "dependencies": {
+    "@astrojs/sitemap": "^3.7.4",
+    "@astrojs/vercel": "^11.0.20",
+    "@fontsource-variable/instrument-sans": "^5.3.0",
+    "@fontsource-variable/newsreader": "^5.3.0",
+    "@vercel/analytics": "^2.0.1",
+    "astro": "^7.4.7"
+  },
+  "devDependencies": {
+    "@astrojs/check": "^0.9.12",
+    "@tailwindcss/vite": "^4.3.5",
+    "tailwindcss": "^4.3.5",
+    "typescript": "^5.9.3"
   }
 }

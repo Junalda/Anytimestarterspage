@@ -1,46 +1,74 @@
-// Controleert de gebouwde /start-pagina's (draai eerst `npm run build`).
-import { readFileSync } from 'node:fs';
+/**
+ * Post-build checks on the static output (run after `npm run build`).
+ *  - every internal link/asset resolves to a built page or file
+ *  - one <h1> per page; unique <title> and meta description
+ *  - robots meta matches the indexing configuration
+ *  - no published prices while pricing is unpublished; no placeholder text
+ *  - external links open safely; JSON-LD parses
+ */
+import { readFileSync, readdirSync, statSync, existsSync } from 'node:fs';
+import { join, relative } from 'node:path';
 
-const WA = 'https://wa.me/31643187444';
-const files = ['dist/start/index.html', 'dist/en/start/index.html'];
-const allowedEuro = new Set(['€35', '€90', '€165', '€200', '€300', '€400', '€750', '€30', '€27,50', '€25', '€5', '€7,50', '€10']);
+const OUT = existsSync('.vercel/output/static') ? '.vercel/output/static' : 'dist';
+const API_ROUTES = new Set(['/api/contact']);
+const walk = (d) => readdirSync(d).flatMap((f) => (statSync(join(d, f)).isDirectory() ? walk(join(d, f)) : [join(d, f)]));
+const files = walk(OUT);
+const htmlFiles = files.filter((f) => f.endsWith('.html'));
+const urlFor = (f) => '/' + relative(OUT, f).replace(/index\.html$/, '').replace(/\.html$/, '').replace(/\/$/, '');
+
+const exists = (path) => {
+  const p = path.replace(/\/$/, '') || '/';
+  if (API_ROUTES.has(p)) return true;
+  return [join(OUT, p), join(OUT, p, 'index.html'), join(OUT, `${p}.html`)].some((c) => existsSync(c) && (statSync(c).isFile() || existsSync(join(c, 'index.html'))));
+};
+
 let fail = 0;
 const bad = (f, m) => { fail++; console.error(`✗ ${f}: ${m}`); };
+const titles = new Map();
+const descs = new Map();
+const ids = (html) => new Set([...html.matchAll(/\sid="([^"]+)"/g)].map((m) => m[1]));
+const pageIds = new Map(htmlFiles.map((f) => [urlFor(f), ids(readFileSync(f, 'utf8'))]));
 
-for (const f of files) {
+for (const f of htmlFiles) {
+  const url = urlFor(f);
   const html = readFileSync(f, 'utf8');
-  const anchors = [...html.matchAll(/<a\b[^>]*>/g)].map((m) => m[0]);
-  const attr = (a, n) => (a.match(new RegExp(`\\s${n}="([^"]*)"`)) || [])[1];
+  const h1 = (html.match(/<h1[\s>]/g) || []).length;
+  if (h1 !== 1) bad(url, `${h1} <h1> elements`);
 
-  // 1. Elke WhatsApp-link → wa.me/31643187444
-  const wa = anchors.filter((a) => /wa\.me|whatsapp|api\.whatsapp/i.test(attr(a, 'href') || ''));
-  for (const a of wa) {
-    const href = attr(a, 'href').replace(/&amp;/g, '&');
-    if (!(href === WA || href.startsWith(`${WA}?text=`))) bad(f, `foute WhatsApp-link ${href}`);
+  const title = html.match(/<title>([^<]*)<\/title>/)?.[1];
+  const desc = html.match(/<meta name="description" content="([^"]*)"/)?.[1];
+  if (!title) bad(url, 'missing <title>');
+  if (!desc) bad(url, 'missing meta description');
+  if (titles.has(title)) bad(url, `duplicate title with ${titles.get(title)}`); else titles.set(title, url);
+  if (descs.has(desc)) bad(url, `duplicate description with ${descs.get(desc)}`); else descs.set(desc, url);
+
+  const robots = html.match(/<meta name="robots" content="([^"]*)"/)?.[1];
+  if (!robots) bad(url, 'missing robots meta');
+  if (process.env.EXPECT_INDEXABLE !== 'true' && robots !== 'noindex, nofollow') bad(url, `expected noindex, got "${robots}"`);
+
+  for (const [, href] of html.matchAll(/\s(?:href|src|action)="([^"]+)"/g)) {
+    if (/^(https?:|mailto:|tel:|data:)/.test(href)) continue;
+    const [path, hash] = href.split('#');
+    if (!path && hash) { if (!pageIds.get(url)?.has(hash)) bad(url, `missing anchor #${hash}`); continue; }
+    if (!path.startsWith('/')) { bad(url, `relative link ${href}`); continue; }
+    if (!exists(path.split('?')[0])) bad(url, `broken link ${href}`);
+    else if (hash && pageIds.has(path.replace(/\/$/, '') || '/') && !pageIds.get(path.replace(/\/$/, '') || '/').has(hash)) bad(url, `missing anchor ${href}`);
   }
-  console.log(`\n${f}: ${wa.length} WhatsApp-links`);
-  for (const a of wa) {
-    const href = attr(a, 'href').replace(/&amp;/g, '&');
-    const text = new URL(href).searchParams.get('text');
-    console.log(`  ✓ [${attr(a, 'data-cta')}] ${text ?? '(geen tekst)'}`);
-  }
+  for (const [a] of html.matchAll(/<a\b[^>]*target="_blank"[^>]*>/g)) if (!/rel="[^"]*noopener/.test(a)) bad(url, 'target=_blank without rel=noopener');
+  for (const [a] of html.matchAll(/<a\b[^>]*>/g)) if (!/href="[^"]+"/.test(a)) bad(url, `link without href: ${a}`);
 
-  // 2. Elke link behalve skip-link heeft een unieke data-cta
-  const ctas = anchors.filter((a) => !/class="skip"/.test(a));
-  const ids = ctas.map((a) => attr(a, 'data-cta'));
-  ctas.forEach((a, i) => { if (!ids[i]) bad(f, `link zonder data-cta: ${a}`); });
-  const dup = ids.filter((id, i) => id && ids.indexOf(id) !== i);
-  if (dup.length) bad(f, `dubbele data-cta: ${dup.join(', ')}`);
-  console.log(`  ${ids.filter(Boolean).length} CTA's met data-cta`);
-
-  // 3. JSON-LD parsebaar
-  const ld = html.match(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/);
-  try { const j = JSON.parse(ld[1]); console.log(`  JSON-LD: ${j.map((x) => [].concat(x['@type']).join('+')).join(', ')} · ${j[0].makesOffer.length} offers`); }
-  catch (e) { bad(f, `JSON-LD ongeldig: ${e.message}`); }
-
-  // 4. Alleen prijzen uit het nieuwe aanbod
   const text = html.replace(/<script[\s\S]*?<\/script>/g, '').replace(/<[^>]+>/g, ' ');
-  for (const m of new Set(text.match(/€\s?\d[\d.]*(,\d{2})?/g) || [])) if (!allowedEuro.has(m.replace(/\s/g, ''))) bad(f, `onbekende prijs ${m}`);
+  if (/€|\bEUR\b/.test(text)) bad(url, 'price visible while pricing should be unpublished');
+  if (/lorem ipsum|TODO|anytime ?music/i.test(text)) bad(url, 'placeholder or legacy text found');
+
+  for (const [, json] of html.matchAll(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/g)) {
+    try { JSON.parse(json); } catch (e) { bad(url, `invalid JSON-LD: ${e.message}`); }
+  }
+  console.log(`✓ ${url.padEnd(20)} ${title}`);
 }
-console.log(fail ? `\n${fail} fout(en)` : '\nAlles OK');
+
+const required = ['/', '/approach', '/programmes', '/about', '/faq', '/contact', '/start'];
+for (const r of required) if (!pageIds.has(r)) bad(r, 'required page missing');
+
+console.log(fail ? `\n${fail} problem(s) found` : `\nAll checks passed (${htmlFiles.length} pages, output: ${OUT})`);
 process.exit(fail ? 1 : 0);
